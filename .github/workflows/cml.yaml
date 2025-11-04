@@ -1,0 +1,49 @@
+name: Train model
+
+on:
+  workflow_dispatch:
+
+jobs:
+  launch-runner:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: iterative/setup-cml@v2
+      - name: Create Runner
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          cml runner launch --reuse \
+            --labels=cml-runner \
+            --cloud=aws \
+            --cloud-region=us-east-1 \
+            --cloud-hdd-size=40 \
+            --cloud-type=m7i-flex.large \
+            --idle-timeout=1200
+
+  train-and-report:
+    needs: launch-runner
+    runs-on: [self-hosted, cml-runner]
+    container:
+      image: docker://iterativeai/cml:0-dvc2-base1
+      options: --ipc=host --shm-size=2g
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version-file: ".python-version"
+      - name: Train model
+        env:
+          REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          python --version
+          pip install -r requirements.txt
+          python train.py
+
+          echo "## Report from your EC2 Instance" > report.md
+          cat metrics.txt >> report.md
+          echo '![](./confusion_matrix.png "Confusion Matrix")' >> report.md
+          cml comment create report.md
