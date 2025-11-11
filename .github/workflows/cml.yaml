@@ -1,7 +1,9 @@
 name: Train model
+on: { workflow_dispatch: {} }
 
-on:
-  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   launch-runner:
@@ -21,12 +23,15 @@ jobs:
             --labels=cml-runner \
             --cloud=aws \
             --cloud-region=us-east-1 \
-            --cloud-image=ubuntu-2204 \
-            #--cloud-image=ami-0360c520857e3138f \
+            --cloud-image=iterative-cml \        # or use the id below
+            # --cloud-image=ami-08b5a7c34b26aba4b \
+            --cloud-type=m7i-flex.large \
             --cloud-hdd-size=40 \
-            --cloud-type=t3.medium \
-            # --cloud-type=m7i-flex.large \ # old line commented out
             --idle-timeout=1200
+            # If you lack a default VPC in us-east-1, uncomment and fill:
+            # --cloud-vpc=vpc-xxxxxxxx \
+            # --cloud-subnet=subnet-xxxxxxxx \
+            # --cloud-security-group=sg-xxxxxxxx
 
   train-and-report:
     needs: launch-runner
@@ -37,7 +42,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version-file: ".python-version"
       - name: Train model
@@ -47,7 +52,6 @@ jobs:
           python --version
           pip install -r requirements.txt
           python train.py
-
           echo "## Report from your EC2 Instance" > report.md
           cat metrics.txt >> report.md
           echo '![](./confusion_matrix.png "Confusion Matrix")' >> report.md
