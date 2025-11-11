@@ -20,7 +20,8 @@ jobs:
             --cloud=aws \
             --cloud-region=us-east-1 \
             --cloud-hdd-size=40 \
-            --cloud-type=m7i-flex.large \
+            --cloud-type=t3.medium \
+            # --cloud-type=m7i-flex.large \ # old line commented out
             --idle-timeout=1200
 
   train-and-report:
