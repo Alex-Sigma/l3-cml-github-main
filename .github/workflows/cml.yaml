@@ -19,6 +19,7 @@ jobs:
             --labels=cml-runner \
             --cloud=aws \
             --cloud-region=us-east-1 \
+            --cloud-image=ami-0360c520857e3138f \
             --cloud-hdd-size=40 \
             --cloud-type=t3.medium \
             # --cloud-type=m7i-flex.large \ # old line commented out
